@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTournament } from '../../context/TournamentContext';
 import { Match, StageType, MatchStatus } from '../../types';
 import { ScoreModal } from './ScoreModal';
+import { OfficialMatchReportModal } from '../common/OfficialMatchReportModal';
 import { exportMatchesToCSV } from '../../utils/exportUtils';
 import {
   Calendar,
@@ -14,7 +15,8 @@ import {
   Trash2,
   Radio,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  FileText
 } from 'lucide-react';
 
 export const MatchManager: React.FC = () => {
@@ -23,12 +25,15 @@ export const MatchManager: React.FC = () => {
     sports,
     contingents,
     referees,
+    athletes,
+    identity,
     addMatch,
     deleteMatch,
     activeRole
   } = useTournament();
 
   const [activeScoreMatchId, setActiveScoreMatchId] = useState<string | null>(null);
+  const [viewingReportMatch, setViewingReportMatch] = useState<Match | null>(null);
   const [filterSport, setFilterSport] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -277,13 +282,23 @@ export const MatchManager: React.FC = () => {
                       {/* Actions */}
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          {/* Berita Acara (BAHP) Official Report */}
+                          <button
+                            onClick={() => setViewingReportMatch(m)}
+                            className="px-2 py-1 text-xs font-semibold rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-colors flex items-center gap-1"
+                            title="Cetak Berita Acara Hasil Pertandingan (BAHP)"
+                          >
+                            <FileText className="w-3 h-3" />
+                            <span className="hidden sm:inline">Berita Acara</span>
+                          </button>
+
                           {canManage && (
                             <button
                               onClick={() => setActiveScoreMatchId(m.id)}
-                              className="px-2.5 py-1 text-xs font-medium rounded bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors flex items-center gap-1"
+                              className="px-2.5 py-1 text-xs font-medium rounded-lg bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors flex items-center gap-1"
                             >
                               <Edit3 className="w-3 h-3" />
-                              <span>Kelola Skor</span>
+                              <span>Skor</span>
                             </button>
                           )}
                           {activeRole === 'super_admin' && (
@@ -449,6 +464,21 @@ export const MatchManager: React.FC = () => {
         <ScoreModal
           matchId={activeScoreMatchId}
           onClose={() => setActiveScoreMatchId(null)}
+        />
+      )}
+
+      {/* Official Match Report Modal (BAHP) */}
+      {viewingReportMatch && (
+        <OfficialMatchReportModal
+          match={viewingReportMatch}
+          sport={sports.find(s => s.id === viewingReportMatch.sportId)}
+          teamA={contingents.find(c => c.id === viewingReportMatch.teamA.rtId)}
+          teamB={contingents.find(c => c.id === viewingReportMatch.teamB.rtId)}
+          refereeName={referees.find(r => r.id === viewingReportMatch.refereeId)?.fullName}
+          mvpName={athletes.find(a => a.id === viewingReportMatch.mvpAthleteId)?.fullName}
+          eventTitle={identity.name}
+          seasonYear={`${identity.season} (${identity.year})`}
+          onClose={() => setViewingReportMatch(null)}
         />
       )}
 

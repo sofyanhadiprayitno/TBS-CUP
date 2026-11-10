@@ -20,9 +20,11 @@ import {
   Target,
   FileSpreadsheet,
   Phone,
-  Mail
+  Mail,
+  FileText
 } from 'lucide-react';
 import { PWAInstallButton } from '../common/PWAInstallBanner';
+import { OfficialMatchReportModal } from '../common/OfficialMatchReportModal';
 
 interface PublicTournamentViewProps {
   onOpenRegisterModal: () => void;
@@ -33,12 +35,13 @@ export const PublicTournamentView: React.FC<PublicTournamentViewProps> = ({
   onOpenRegisterModal,
   onOpenScoreModal
 }) => {
-  const { identity, matches, sports, contingents, athletes, activeRole } = useTournament();
+  const { identity, matches, sports, contingents, athletes, referees, activeRole } = useTournament();
 
   const [selectedSport, setSelectedSport] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCaborForRules, setSelectedCaborForRules] = useState<SportBranch | null>(null);
+  const [viewingPublicReportMatch, setViewingPublicReportMatch] = useState<Match | null>(null);
 
   const liveMatches = matches.filter(m => m.status === 'live');
 
@@ -604,23 +607,34 @@ export const PublicTournamentView: React.FC<PublicTournamentViewProps> = ({
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                  <span className="text-[11px] text-slate-400 truncate max-w-[160px]">
+                  <span className="text-[11px] text-slate-400 truncate max-w-[150px]">
                     📍 {m.venue}
                   </span>
 
-                  {isCompleted ? (
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold font-mono flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" /> SELESAI
-                    </span>
-                  ) : isLive ? (
-                    <span className="text-[10px] text-rose-500 font-bold font-mono animate-pulse">
-                      🔴 LIVE B{m.currentRound}
-                    </span>
-                  ) : (
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      TERJADWAL
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {isCompleted ? (
+                      <>
+                        <button
+                          onClick={() => setViewingPublicReportMatch(m)}
+                          className="text-[10px] text-amber-400 hover:text-amber-300 font-bold font-mono flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
+                          title="Lihat Surat Berita Acara Hasil Pertandingan"
+                        >
+                          <FileText className="w-3 h-3" /> Berita Acara
+                        </button>
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold font-mono flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> SELESAI
+                        </span>
+                      </>
+                    ) : isLive ? (
+                      <span className="text-[10px] text-rose-500 font-bold font-mono animate-pulse">
+                        🔴 LIVE B{m.currentRound}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        TERJADWAL
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -685,6 +699,21 @@ export const PublicTournamentView: React.FC<PublicTournamentViewProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Official Match Report Modal (BAHP) for Public */}
+      {viewingPublicReportMatch && (
+        <OfficialMatchReportModal
+          match={viewingPublicReportMatch}
+          sport={sports.find(s => s.id === viewingPublicReportMatch.sportId)}
+          teamA={contingents.find(c => c.id === viewingPublicReportMatch.teamA.rtId)}
+          teamB={contingents.find(c => c.id === viewingPublicReportMatch.teamB.rtId)}
+          refereeName={referees.find(r => r.id === viewingPublicReportMatch.refereeId)?.fullName}
+          mvpName={athletes.find(a => a.id === viewingPublicReportMatch.mvpAthleteId)?.fullName}
+          eventTitle={identity.name}
+          seasonYear={`${identity.season} (${identity.year})`}
+          onClose={() => setViewingPublicReportMatch(null)}
+        />
       )}
     </div>
   );

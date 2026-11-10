@@ -20,7 +20,13 @@ import {
   Phone,
   Mail,
   RotateCcw,
-  CheckCircle2
+  CheckCircle2,
+  Database,
+  Download,
+  Upload,
+  Copy,
+  RefreshCw,
+  FileCheck
 } from 'lucide-react';
 
 export const SettingsAndRBACManager: React.FC = () => {
@@ -38,10 +44,25 @@ export const SettingsAndRBACManager: React.FC = () => {
     updateUser,
     deleteUser,
     activeRole,
-    currentUser
+    currentUser,
+    contingents,
+    sports,
+    athletes,
+    matches,
+    exportDatabaseBackup,
+    restoreDatabaseBackup,
+    resetAllData
   } = useTournament();
 
-  const [activeTab, setActiveTab] = useState<'identity' | 'seasons' | 'users' | 'recovery'>('identity');
+  const [activeTab, setActiveTab] = useState<'identity' | 'seasons' | 'users' | 'recovery' | 'backup'>('identity');
+
+  // Backup & Reset State
+  const [restoreJsonInput, setRestoreJsonInput] = useState('');
+  const [restoreStatus, setRestoreStatus] = useState<string | null>(null);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetConfirmWord, setResetConfirmWord] = useState('');
+  const [backupCopied, setBackupCopied] = useState(false);
 
   // Identity Form State
   const [name, setName] = useState(identity.name);
@@ -285,6 +306,17 @@ export const SettingsAndRBACManager: React.FC = () => {
             }`}
           >
             Pemulihan Akun
+          </button>
+          <button
+            onClick={() => setActiveTab('backup')}
+            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
+              activeTab === 'backup'
+                ? 'bg-rose-500 text-slate-950 font-black shadow-sm'
+                : 'text-rose-400 hover:text-rose-300 hover:bg-rose-500/10'
+            }`}
+          >
+            <Database className="w-3.5 h-3.5" />
+            <span>Backup & Reset</span>
           </button>
         </div>
       </div>
@@ -830,6 +862,234 @@ export const SettingsAndRBACManager: React.FC = () => {
         </div>
       )}
 
+      {/* Tab 5: Backup & Reset Data Sistem */}
+      {activeTab === 'backup' && (
+        <div className="space-y-6 max-w-4xl">
+          {/* Header Info */}
+          <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">
+                <Database className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white">
+                  Pusat Cadangan Data (Backup) & Pemulihan Sistem (Restore)
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Amankan seluruh data turnamen, kontingen RT, atlet, jadwal, skor, sponsor, dan kas keuangan secara instan.
+                </p>
+              </div>
+            </div>
+            <span className="text-[11px] font-mono px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+              <Shield className="w-3 h-3" /> Auto Sync Aktif
+            </span>
+          </div>
+
+          {/* Backup Summary Stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
+            <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800">
+              <span className="text-slate-400 text-[10px] block">KONTINGEN RT</span>
+              <strong className="text-white text-base font-bold">{contingents.length} RT</strong>
+            </div>
+            <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800">
+              <span className="text-slate-400 text-[10px] block">CABANG OLAHRAGA</span>
+              <strong className="text-amber-400 text-base font-bold">{sports.length} Cabor</strong>
+            </div>
+            <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800">
+              <span className="text-slate-400 text-[10px] block">ATLET TERDAFTAR</span>
+              <strong className="text-emerald-400 text-base font-bold">{athletes.length} Atlet</strong>
+            </div>
+            <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800">
+              <span className="text-slate-400 text-[10px] block">PERTANDINGAN</span>
+              <strong className="text-indigo-400 text-base font-bold">{matches.length} Laga</strong>
+            </div>
+          </div>
+
+          {/* 1. Ekspor Cadangan Data (Download Backup) */}
+          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <Download className="w-4 h-4 text-emerald-400" />
+                <h4 className="text-sm font-bold text-white">
+                  1. Ekspor & Unduh File Cadangan (Backup Database)
+                </h4>
+              </div>
+              <span className="text-[10px] font-mono text-slate-400">Format: JSON Terenkripsi</span>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Unduh berkas arsip lengkap seluruh konfigurasi, atlet, wasit, sponsor, bagan turnamen, serta laporan keuangan. File backup ini dapat disimpan di komputer panitia atau Google Drive sebagai arsip resmi.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  const data = exportDatabaseBackup();
+                  const blob = new Blob([data], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `backup_turnamen_rw08_${new Date().toISOString().slice(0, 10)}.json`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                }}
+                className="px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-md flex items-center gap-2 transition-all"
+              >
+                <Download className="w-4 h-4" />
+                <span>Unduh File Backup (.json)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const data = exportDatabaseBackup();
+                  navigator.clipboard.writeText(data);
+                  setBackupCopied(true);
+                  setTimeout(() => setBackupCopied(false), 2500);
+                }}
+                className="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-2 transition-all"
+              >
+                {backupCopied ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    <span className="text-emerald-400">Tersalin ke Clipboard!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    <span>Salin Teks Backup JSON</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* 2. Pemulihan Data Sistem (Restore Backup) */}
+          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <Upload className="w-4 h-4 text-indigo-400" />
+                <h4 className="text-sm font-bold text-white">
+                  2. Pulihkan Data dari File Backup (Restore Database)
+                </h4>
+              </div>
+              <span className="text-[10px] font-mono text-slate-400">Unggah File atau Tempel JSON</span>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Pilih file backup (.json) yang pernah Anda unduh sebelumnya atau tempelkan teks JSON untuk memulihkan seluruh data dan skor turnamen.
+            </p>
+
+            {restoreStatus && (
+              <div className="p-3.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{restoreStatus}</span>
+              </div>
+            )}
+
+            {restoreError && (
+              <div className="p-3.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-400 text-xs flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>{restoreError}</span>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                  Pilih File Backup JSON dari Komputer / HP:
+                </label>
+                <input
+                  type="file"
+                  accept=".json,application/json"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      const content = event.target?.result as string;
+                      setRestoreJsonInput(content);
+                    };
+                    reader.readAsText(file);
+                  }}
+                  className="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 file:cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                  Atau Tempelkan Isi Kode JSON Backup di Bawah Ini:
+                </label>
+                <textarea
+                  rows={4}
+                  value={restoreJsonInput}
+                  onChange={(e) => setRestoreJsonInput(e.target.value)}
+                  placeholder='{"identity": {...}, "athletes": [...], "matches": [...]}'
+                  className="w-full p-3 rounded-xl border border-slate-700 bg-slate-800 text-white font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  disabled={!restoreJsonInput.trim()}
+                  onClick={() => {
+                    if (!restoreJsonInput.trim()) return;
+                    try {
+                      const success = restoreDatabaseBackup(restoreJsonInput);
+                      if (success) {
+                        setRestoreStatus('Berhasil! Seluruh data turnamen telah dipulihkan dari arsip backup.');
+                        setRestoreError(null);
+                        setRestoreJsonInput('');
+                      } else {
+                        setRestoreError('Gagal memulihkan database. Format JSON tidak sesuai dengan skema turnamen.');
+                        setRestoreStatus(null);
+                      }
+                    } catch (err: any) {
+                      setRestoreError('Error saat membaca file JSON: ' + (err?.message || 'Data korup'));
+                      setRestoreStatus(null);
+                    }
+                  }}
+                  className="px-5 py-2 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white shadow-md transition-all flex items-center gap-1.5"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Jalankan Pemulihan Data (Restore)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Reset Seluruh Data (Danger Zone) */}
+          <div className="p-6 rounded-2xl bg-rose-950/20 border border-rose-500/40 space-y-4">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-rose-500" />
+              <h4 className="text-sm font-bold text-rose-400">
+                3. Zona Berbahaya: Reset Seluruh Data ke Setelan Awal Pabrik
+              </h4>
+            </div>
+
+            <p className="text-xs text-rose-300/80 leading-relaxed">
+              Tindakan ini akan menghapus semua perubahan custom, mengosongkan log aktivitas, dan mengembalikan seluruh data (atlet, pertandingan, jadwal, RAB, kas) ke data awal default RW 08. Pastikan Anda telah mengunduh file backup sebelum melakukan reset.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                setResetConfirmWord('');
+                setShowResetModal(true);
+              }}
+              className="px-4 py-2 text-xs font-bold rounded-xl bg-rose-600 hover:bg-rose-500 text-white shadow-md flex items-center gap-2 transition-all"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span>Reset Data Turnamen</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Modal: Tambah Musim & Tahun Baru */}
       {isAddSeasonOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
@@ -1217,6 +1477,59 @@ export const SettingsAndRBACManager: React.FC = () => {
                 className="px-4 py-1.5 font-bold rounded-lg bg-rose-600 hover:bg-rose-500 text-white shadow-sm"
               >
                 Hapus Sekarang
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Reset Data Sistem Konfirmasi */}
+      {showResetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-6 space-y-4">
+            <div className="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 mx-auto flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+
+            <div className="text-center space-y-1">
+              <h3 className="text-base font-bold text-white">
+                Konfirmasi Reset Seluruh Data Turnamen
+              </h3>
+              <p className="text-xs text-slate-400">
+                Tindakan ini akan mengembalikan seluruh database ke kondisi awal default. Ketik <span className="text-rose-400 font-mono font-bold">RESET</span> untuk melanjutkan.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <input
+                type="text"
+                placeholder="Ketik 'RESET' di sini..."
+                value={resetConfirmWord}
+                onChange={e => setResetConfirmWord(e.target.value)}
+                className="w-full p-2.5 rounded-xl border border-rose-500/40 bg-slate-800 text-white font-mono text-center text-sm font-bold tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-rose-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowResetModal(false)}
+                className="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={resetConfirmWord.trim().toUpperCase() !== 'RESET'}
+                onClick={() => {
+                  resetAllData();
+                  setShowResetModal(false);
+                  setResetConfirmWord('');
+                }}
+                className="px-4 py-2 text-xs font-bold rounded-xl bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-white shadow-md transition-all flex items-center gap-1.5"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Ya, Reset Semua Data</span>
               </button>
             </div>
           </div>

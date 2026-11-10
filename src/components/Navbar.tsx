@@ -113,13 +113,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             </button>
 
-            {/* Google Sheets Sync Indicator Pill-less unboxed text */}
-            <div className="hidden lg:flex items-center gap-1.5 pl-3 border-l border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
-              <span className="font-mono text-[11px]">
-                {googleSheetsConfig.syncStatus === 'connected' ? 'Sheets Active' : 'Local Queue'}
-              </span>
-            </div>
           </div>
 
           {/* Zone 2: 4-5 concise single-line text navigation links */}

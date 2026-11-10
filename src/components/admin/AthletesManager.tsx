@@ -15,11 +15,16 @@ import {
   Award,
   Trash2,
   Edit2,
+  Eye,
   UserCheck,
   X,
   Filter,
   Gamepad2,
-  Sparkles
+  Sparkles,
+  Phone,
+  Mail,
+  Calendar,
+  CreditCard
 } from 'lucide-react';
 
 export const AthletesManager: React.FC = () => {
@@ -43,6 +48,7 @@ export const AthletesManager: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingAthlete, setEditingAthlete] = useState<Athlete | null>(null);
   const [athleteToDelete, setAthleteToDelete] = useState<Athlete | null>(null);
+  const [viewingAthlete, setViewingAthlete] = useState<Athlete | null>(null);
 
   // Add Form State
   const [fullName, setFullName] = useState('');
@@ -328,31 +334,57 @@ export const AthletesManager: React.FC = () => {
                         )}
                       </td>
 
-                      {/* Actions: Edit, Delete, Verify */}
+                      {/* Actions: Lihat, Edit, Tambah, Hapus */}
                       <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex items-center justify-end gap-1">
+                          {/* 1. Lihat (View KTA / Detail) */}
+                          <button
+                            onClick={() => setViewingAthlete(a)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-sky-400 hover:bg-sky-500/10 transition-colors"
+                            title="Lihat Detail & KTA Atlet"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+
                           {canManage && (
                             <>
+                              {/* 2. Edit */}
                               <button
                                 onClick={() => setEditingAthlete(a)}
-                                className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors"
                                 title="Edit Data Atlet"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
+
+                              {/* 3. Tambah (Quick add for this RT/Cabor) */}
+                              <button
+                                onClick={() => {
+                                  setRtId(a.rtId);
+                                  setSportId(a.sportId);
+                                  setShowAddModal(true);
+                                }}
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                                title="Tambah Atlet di RT Ini"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* 4. Hapus */}
                               <button
                                 onClick={() => setAthleteToDelete(a)}
-                                className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
                                 title="Hapus Atlet"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </>
                           )}
+
                           {canManage && a.status !== 'verified' && (
                             <button
                               onClick={() => verifyAthlete(a.id, 'verified')}
-                              className="px-2 py-1 text-[11px] font-semibold rounded bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100"
+                              className="ml-1 px-2 py-1 text-[11px] font-semibold rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
                               title="Setujui Verifikasi Domisili"
                             >
                               Setujui
@@ -713,6 +745,159 @@ export const AthletesManager: React.FC = () => {
         </div>
       )}
 
+      {/* Modal 4: Lihat Detail & KTA Atlet Digital */}
+      {viewingAthlete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden my-8 text-slate-100">
+            {/* Header Badge Card */}
+            <div className="relative p-6 bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-900 border-b border-slate-800">
+              <button
+                onClick={() => setViewingAthlete(null)}
+                className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-center gap-2 text-indigo-400 text-xs font-mono font-bold tracking-wider uppercase mb-2">
+                <CreditCard className="w-4 h-4" />
+                <span>Kartu Tanda Anggota Atlet (KTA Digital)</span>
+              </div>
+
+              <div className="flex items-center gap-4 mt-3">
+                <img
+                  src={viewingAthlete.avatarUrl}
+                  alt={viewingAthlete.fullName}
+                  referrerPolicy="no-referrer"
+                  className="w-16 h-16 rounded-2xl object-cover border-2 border-indigo-500/40 shadow-lg"
+                  onError={e => {
+                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80';
+                  }}
+                />
+                <div>
+                  <h4 className="text-lg font-bold text-white">
+                    {viewingAthlete.fullName}
+                  </h4>
+                  <div className="text-sm font-mono text-indigo-400 font-semibold">
+                    "{viewingAthlete.nickname}"
+                  </div>
+                  <div className="text-xs text-slate-400 font-mono mt-0.5">
+                    NIK: {viewingAthlete.nikMasked}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Content Details */}
+            <div className="p-6 space-y-4 text-xs">
+              {/* Status & Role Pill */}
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-800/60 border border-slate-700/60">
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Status KTP Warga:</span>
+                  {viewingAthlete.status === 'verified' ? (
+                    <span className="text-emerald-400 font-bold flex items-center gap-1 mt-0.5">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Terverifikasi Sah RW 08
+                    </span>
+                  ) : viewingAthlete.status === 'pending' ? (
+                    <span className="text-amber-400 font-bold flex items-center gap-1 mt-0.5">
+                      <Clock className="w-3.5 h-3.5" /> Menunggu Konfirmasi RT
+                    </span>
+                  ) : (
+                    <span className="text-rose-400 font-bold flex items-center gap-1 mt-0.5">
+                      <XCircle className="w-3.5 h-3.5" /> Berkas Ditolak
+                    </span>
+                  )}
+                </div>
+
+                <div className="text-right">
+                  <span className="text-slate-400 block text-[11px]">Peran Skuad:</span>
+                  <span className="font-bold text-amber-400 mt-0.5 block">
+                    {viewingAthlete.role === 'Captain' ? '👑 Kapten Tim' : viewingAthlete.role === 'Member' ? 'Pemain Inti' : 'Pemain Cadangan'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Grid Info */}
+              <div className="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-slate-800/40 border border-slate-700/50 font-mono">
+                <div>
+                  <span className="text-slate-400 text-[10px] block">KONTINGEN RT</span>
+                  <span className="font-bold text-white text-xs">
+                    {contingentsMap[viewingAthlete.rtId] || viewingAthlete.rtId}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 text-[10px] block">CABANG OLAHRAGA</span>
+                  <span className="font-bold text-amber-300 text-xs">
+                    {sportsMap[viewingAthlete.sportId] || viewingAthlete.sportId}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 text-[10px] block">IN-GAME ID (IGN)</span>
+                  <span className="font-bold text-indigo-300 text-xs truncate block">
+                    {viewingAthlete.inGameId}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 text-[10px] block">KONTAK WHATSAPP</span>
+                  <span className="font-bold text-emerald-400 text-xs">
+                    {viewingAthlete.phone}
+                  </span>
+                </div>
+              </div>
+
+              {/* Match Stats Box */}
+              <div className="p-3.5 rounded-xl bg-slate-800/30 border border-slate-700/40">
+                <span className="text-slate-400 text-[11px] font-semibold block mb-2">
+                  Statistik Rekam Jejak Turnamen
+                </span>
+                <div className="grid grid-cols-3 gap-2 text-center font-mono">
+                  <div className="p-2 rounded-lg bg-slate-800/80">
+                    <span className="text-[10px] text-slate-400 block">Tanding</span>
+                    <strong className="text-sm text-white">{viewingAthlete.matchesPlayed}</strong>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-800/80">
+                    <span className="text-[10px] text-slate-400 block">Menang</span>
+                    <strong className="text-sm text-emerald-400">{viewingAthlete.wins}</strong>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-800/80">
+                    <span className="text-[10px] text-slate-400 block">MVP</span>
+                    <strong className="text-sm text-amber-400 flex items-center justify-center gap-1">
+                      <Award className="w-3 h-3" /> {viewingAthlete.mvpCount}x
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons in Modal */}
+              <div className="flex items-center justify-between pt-2">
+                <div className="text-[10px] text-slate-400 font-mono">
+                  ID: #{viewingAthlete.id.toUpperCase()}
+                </div>
+                <div className="flex items-center gap-2">
+                  {canManage && (
+                    <button
+                      onClick={() => {
+                        const target = viewingAthlete;
+                        setViewingAthlete(null);
+                        setEditingAthlete(target);
+                      }}
+                      className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1"
+                    >
+                      <Edit2 className="w-3 h-3" />
+                      <span>Edit Data</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setViewingAthlete(null)}
+                    className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200"
+                  >
+                    Tutup
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -89,14 +89,20 @@ interface TournamentContextType {
   deleteMatch: (matchId: string) => void;
   budgetItems: BudgetItem[];
   addBudgetItem: (item: Omit<BudgetItem, 'id'>) => void;
+  updateBudgetItem: (item: BudgetItem) => void;
   deleteBudgetItem: (id: string) => void;
   expenses: ExpenseRecord[];
   addExpense: (expense: Omit<ExpenseRecord, 'id'>) => void;
+  updateExpense: (expense: ExpenseRecord) => void;
+  deleteExpense: (id: string) => void;
   incomes: IncomeRecord[];
   addIncome: (income: Omit<IncomeRecord, 'id'>) => void;
+  updateIncome: (income: IncomeRecord) => void;
+  deleteIncome: (id: string) => void;
   sponsors: Sponsor[];
-  updateSponsor: (sponsor: Sponsor) => void;
   addSponsor: (sponsor: Omit<Sponsor, 'id'>) => void;
+  updateSponsor: (sponsor: Sponsor) => void;
+  deleteSponsor: (id: string) => void;
   users: UserAccount[];
   addUser: (user: Omit<UserAccount, 'id'>) => void;
   updateUser: (user: UserAccount) => void;
@@ -476,11 +482,15 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
     addAuditLog('DELETE_ATHLETE', 'Data Atlet', `Atlet ${athleteId} dihapus.`);
   };
 
-  // Finance Management
   const addBudgetItem = (item: Omit<BudgetItem, 'id'>) => {
     const newItem: BudgetItem = { ...item, id: `b-${Date.now()}` };
     setBudgetItems(prev => [...prev, newItem]);
     addAuditLog('ADD_BUDGET_ITEM', 'RAB Keuangan', `Pos anggaran baru: ${item.title} (Rp ${item.plannedAmount})`);
+  };
+
+  const updateBudgetItem = (item: BudgetItem) => {
+    setBudgetItems(prev => prev.map(b => b.id === item.id ? item : b));
+    addAuditLog('UPDATE_BUDGET_ITEM', 'RAB Keuangan', `Pos anggaran ${item.title} diperbarui.`);
   };
 
   const deleteBudgetItem = (id: string) => {
@@ -495,11 +505,31 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
     sendNotification('Pengeluaran Dicatat', `Realisasi Rp ${expense.amount.toLocaleString('id-ID')} dicatat oleh ${expense.paidBy}`, 'finance', 'bendahara');
   };
 
+  const updateExpense = (expense: ExpenseRecord) => {
+    setExpenses(prev => prev.map(e => e.id === expense.id ? expense : e));
+    addAuditLog('UPDATE_EXPENSE', 'Keuangan', `Pengeluaran ${expense.description} diperbarui.`);
+  };
+
+  const deleteExpense = (id: string) => {
+    setExpenses(prev => prev.filter(e => e.id !== id));
+    addAuditLog('DELETE_EXPENSE', 'Keuangan', `Pengeluaran ${id} dihapus.`);
+  };
+
   const addIncome = (income: Omit<IncomeRecord, 'id'>) => {
     const newInc: IncomeRecord = { ...income, id: `inc-${Date.now()}` };
     setIncomes(prev => [newInc, ...prev]);
     addAuditLog('RECORD_INCOME', 'Keuangan', `Pemasukan kas: ${income.sourceName} Rp ${income.amount} via ${income.paymentMethod}`);
     sendNotification('Pemasukan Baru', `Kas masuk Rp ${income.amount.toLocaleString('id-ID')} dari ${income.sourceName}`, 'finance', 'bendahara');
+  };
+
+  const updateIncome = (income: IncomeRecord) => {
+    setIncomes(prev => prev.map(i => i.id === income.id ? income : i));
+    addAuditLog('UPDATE_INCOME', 'Keuangan', `Pemasukan kas ${income.sourceName} diperbarui.`);
+  };
+
+  const deleteIncome = (id: string) => {
+    setIncomes(prev => prev.filter(i => i.id !== id));
+    addAuditLog('DELETE_INCOME', 'Keuangan', `Pemasukan kas ${id} dihapus.`);
   };
 
   // Sponsor & Committee Management
@@ -512,6 +542,11 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
     const newSp: Sponsor = { ...data, id: `spn-${Date.now()}` };
     setSponsors(prev => [...prev, newSp]);
     addAuditLog('ADD_SPONSOR', 'Sponsor', `Sponsor baru ditambahkan: ${data.name} (Tier: ${data.tier})`);
+  };
+
+  const deleteSponsor = (id: string) => {
+    setSponsors(prev => prev.filter(s => s.id !== id));
+    addAuditLog('DELETE_SPONSOR', 'Sponsor', `Sponsor ${id} dihapus.`);
   };
 
   const addCommitteeMember = (member: Omit<CommitteeMember, 'id'>) => {
@@ -805,14 +840,20 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
         deleteMatch,
         budgetItems,
         addBudgetItem,
+        updateBudgetItem,
         deleteBudgetItem,
         expenses,
         addExpense,
+        updateExpense,
+        deleteExpense,
         incomes,
         addIncome,
+        updateIncome,
+        deleteIncome,
         sponsors,
-        updateSponsor,
         addSponsor,
+        updateSponsor,
+        deleteSponsor,
         committee,
         addCommitteeMember,
         updateCommitteeMember,
