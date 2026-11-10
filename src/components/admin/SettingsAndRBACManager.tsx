@@ -16,7 +16,11 @@ import {
   Trophy,
   Sparkles,
   AlertTriangle,
-  X
+  X,
+  Phone,
+  Mail,
+  RotateCcw,
+  CheckCircle2
 } from 'lucide-react';
 
 export const SettingsAndRBACManager: React.FC = () => {
@@ -26,6 +30,9 @@ export const SettingsAndRBACManager: React.FC = () => {
     seasons,
     currentSeason,
     setSeason,
+    addSeason,
+    updateSeason,
+    deleteSeason,
     users,
     addUser,
     updateUser,
@@ -38,6 +45,8 @@ export const SettingsAndRBACManager: React.FC = () => {
 
   // Identity Form State
   const [name, setName] = useState(identity.name);
+  const [seasonText, setSeasonText] = useState(identity.season);
+  const [yearNum, setYearNum] = useState(identity.year || 2026);
   const [slogan, setSlogan] = useState(identity.slogan);
   const [organizer, setOrganizer] = useState(identity.organizer);
   const [location, setLocation] = useState(identity.location);
@@ -48,6 +57,18 @@ export const SettingsAndRBACManager: React.FC = () => {
   const [bannerUrl, setBannerUrl] = useState(identity.bannerUrl || '');
   const [trophyImageUrl, setTrophyImageUrl] = useState(identity.trophyImageUrl || '');
   const [saveIdentitySuccess, setSaveIdentitySuccess] = useState(false);
+
+  // Season CRUD states
+  const [isAddSeasonOpen, setIsAddSeasonOpen] = useState(false);
+  const [editingSeason, setEditingSeason] = useState<Season | null>(null);
+  const [seasonToDelete, setSeasonToDelete] = useState<Season | null>(null);
+
+  // New Season Form State
+  const [newSeasonName, setNewSeasonName] = useState('');
+  const [newSeasonYear, setNewSeasonYear] = useState(new Date().getFullYear());
+  const [newSeasonStart, setNewSeasonStart] = useState('2026-08-01');
+  const [newSeasonEnd, setNewSeasonEnd] = useState('2026-08-17');
+  const [newSeasonSetCurrent, setNewSeasonSetCurrent] = useState(true);
 
   // User CRUD states
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
@@ -69,6 +90,8 @@ export const SettingsAndRBACManager: React.FC = () => {
     e.preventDefault();
     updateIdentity({
       name,
+      season: seasonText,
+      year: yearNum,
       slogan,
       organizer,
       location,
@@ -83,6 +106,52 @@ export const SettingsAndRBACManager: React.FC = () => {
     setTimeout(() => setSaveIdentitySuccess(false), 2500);
   };
 
+  // Season Handlers
+  const handleOpenAddSeason = () => {
+    const nextYear = new Date().getFullYear();
+    setNewSeasonName(`Musim ${nextYear} - Turnamen Kemerdekaan`);
+    setNewSeasonYear(nextYear);
+    setNewSeasonStart(`${nextYear}-08-01`);
+    setNewSeasonEnd(`${nextYear}-08-17`);
+    setNewSeasonSetCurrent(true);
+    setIsAddSeasonOpen(true);
+  };
+
+  const handleCreateSeason = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSeasonName.trim()) return;
+
+    addSeason({
+      name: newSeasonName.trim(),
+      year: Number(newSeasonYear),
+      startDate: newSeasonStart,
+      endDate: newSeasonEnd,
+      isActive: newSeasonSetCurrent
+    });
+
+    setIsAddSeasonOpen(false);
+  };
+
+  const handleOpenEditSeason = (s: Season) => {
+    setEditingSeason(s);
+  };
+
+  const handleSaveEditSeason = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSeason || !editingSeason.name.trim()) return;
+
+    updateSeason(editingSeason);
+    setEditingSeason(null);
+  };
+
+  const handleConfirmDeleteSeason = () => {
+    if (seasonToDelete) {
+      deleteSeason(seasonToDelete.id);
+      setSeasonToDelete(null);
+    }
+  };
+
+  // User Handlers
   const handleOpenAddUser = () => {
     setUserUsername('');
     setUserFullName('');
@@ -165,9 +234,11 @@ export const SettingsAndRBACManager: React.FC = () => {
             <span>Pengaturan Identitas Acara, Banner, Trofi & Hak Akses (RBAC)</span>
           </h2>
           <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-2">
-            <span>Upload Hero Banner & Logo</span>
+            <span>Edit Musim & Tahun</span>
             <span aria-hidden="true">·</span>
-            <span>Foto Trofi Juara</span>
+            <span>Kontak WhatsApp & Email</span>
+            <span aria-hidden="true">·</span>
+            <span>Upload Hero Banner, Trofi & Logo</span>
             <span aria-hidden="true">·</span>
             <span>Manajemen Pengguna (Tambah, Edit, Hapus)</span>
           </div>
@@ -183,7 +254,7 @@ export const SettingsAndRBACManager: React.FC = () => {
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            Identitas & Gambar
+            Identitas & Kontak
           </button>
           <button
             onClick={() => setActiveTab('seasons')}
@@ -193,7 +264,7 @@ export const SettingsAndRBACManager: React.FC = () => {
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            Musim & Tahun
+            Musim & Tahun ({seasons.length})
           </button>
           <button
             onClick={() => setActiveTab('users')}
@@ -218,22 +289,38 @@ export const SettingsAndRBACManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Tab 1: Identity & Full Image Upload Settings */}
+      {/* Tab 1: Identity, Season Editing & Contact Info Settings */}
       {activeTab === 'identity' && (
         <form onSubmit={handleSaveIdentity} className="space-y-6 max-w-4xl">
+          {/* Main Tournament Information */}
           <div className="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-6">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-amber-500" />
-                <span>Pengaturan Identitas Utama Turnamen</span>
+                <span>Pengaturan Identitas Utama Turnamen & Musim Aktif</span>
               </h3>
-              <span className="text-xs font-mono text-slate-400">Musim Aktif: {identity.season}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">
+                  Musim Aktif: {identity.season} ({identity.year})
+                </span>
+              </div>
+            </div>
+
+            {/* Multi-Season & Annual Event Explanatory Banner */}
+            <div className="p-4 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 text-xs text-amber-950 dark:text-amber-200 space-y-1">
+              <div className="font-bold flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                <span>Sistem Multi-Musim & Penggunaan Kegiatan Tahunan:</span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                Aplikasi ini dirancang untuk dapat dipakai terus menerus di setiap kegiatan tahunan (HUT RI, Porseni Warga, Turnamen Akhir Tahun, dsb.). Anda dapat mengubah nama musim aktif di bawah ini, atau mengelola riwayat musim pada tab <strong>Musim & Tahun</strong>.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div>
                 <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Nama Resmi Turnamen
+                  Nama Resmi Turnamen *
                 </label>
                 <input
                   type="text"
@@ -257,6 +344,65 @@ export const SettingsAndRBACManager: React.FC = () => {
               </div>
             </div>
 
+            {/* Season and Year Editing */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+              <div className="md:col-span-2">
+                <label className="font-bold text-slate-900 dark:text-white block mb-1 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Edit Nama Musim / Edisi Acara</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={seasonText}
+                  onChange={e => setSeasonText(e.target.value)}
+                  placeholder="Contoh: Musim 2026 - HUT RI Ke-81"
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-900 dark:text-white block mb-1">
+                  Tahun Acara
+                </label>
+                <input
+                  type="number"
+                  required
+                  min={2020}
+                  max={2035}
+                  value={yearNum}
+                  onChange={e => setYearNum(Number(e.target.value))}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold"
+                />
+              </div>
+
+              <div className="md:col-span-3 pt-1">
+                <label className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1">
+                  Atau Beralih Cepat ke Koleksi Musim Terdaftar:
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {seasons.map(s => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        setSeason(s.id);
+                        setSeasonText(s.name);
+                        setYearNum(s.year);
+                      }}
+                      className={`px-3 py-1 text-xs font-mono rounded-lg border transition-all ${
+                        s.name === seasonText
+                          ? 'bg-amber-500 text-slate-950 font-bold border-amber-400'
+                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-amber-400'
+                      }`}
+                    >
+                      {s.name} ({s.year})
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             <div>
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                 Slogan / Tema Acara
@@ -269,29 +415,64 @@ export const SettingsAndRBACManager: React.FC = () => {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Lokasi Pusat Turnamen / Arena Utama
-                </label>
-                <input
-                  type="text"
-                  value={location}
-                  onChange={e => setLocation(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                />
+            <div>
+              <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                Lokasi Pusat Turnamen / Arena Utama
+              </label>
+              <input
+                type="text"
+                value={location}
+                onChange={e => setLocation(e.target.value)}
+                className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+              />
+            </div>
+
+            {/* Official Contact Phone & Email Settings */}
+            <div className="p-5 rounded-2xl bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-xs text-indigo-950 dark:text-indigo-200 flex items-center gap-1.5">
+                  <Phone className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <span>Pengaturan Nomor Kontak & Email Resmi Panitia</span>
+                </span>
+                <span className="text-[10px] font-mono text-slate-500">Tampil di Beranda & Formulir</span>
               </div>
 
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Nomor WhatsApp Hotline Panitia
-                </label>
-                <input
-                  type="text"
-                  value={contactWa}
-                  onChange={e => setContactWa(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div>
+                  <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                    Nomor Kontak / WhatsApp Panitia *
+                  </label>
+                  <div className="relative">
+                    <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      required
+                      placeholder="Contoh: 0812-3456-7890 atau 6281234567890"
+                      value={contactWa}
+                      onChange={e => setContactWa(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                    />
+                  </div>
+                  <span className="text-[10px] text-slate-500 mt-1 block">Warga dapat mengklik nomor ini untuk chat langsung di WhatsApp.</span>
+                </div>
+
+                <div>
+                  <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                    Alamat Email Resmi Panitia & Pengurus *
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="email"
+                      required
+                      placeholder="Contoh: panitia.turnamen@rw08.org"
+                      value={contactEmail}
+                      onChange={e => setContactEmail(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <span className="text-[10px] text-slate-500 mt-1 block">Digunakan untuk surat-menyurat resmi dan pendaftaran atlet.</span>
+                </div>
               </div>
             </div>
           </div>
@@ -373,10 +554,10 @@ export const SettingsAndRBACManager: React.FC = () => {
             <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
               {saveIdentitySuccess ? (
                 <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 animate-fadeIn">
-                  <Check className="w-4 h-4" /> Pengaturan identitas dan gambar berhasil disimpan!
+                  <Check className="w-4 h-4" /> Pengaturan identitas, kontak, dan gambar berhasil disimpan!
                 </span>
               ) : (
-                <span className="text-xs text-slate-400">Pastikan resolusi gambar proporsional</span>
+                <span className="text-xs text-slate-400">Pastikan nomor kontak & email aktif</span>
               )}
 
               <button
@@ -391,55 +572,106 @@ export const SettingsAndRBACManager: React.FC = () => {
         </form>
       )}
 
-      {/* Tab 2: Seasons & Year Management */}
+      {/* Tab 2: Seasons & Year Management with Full CRUD (Tambah, Edit, Hapus, Beralih) */}
       {activeTab === 'seasons' && (
-        <div className="space-y-4 max-w-3xl">
-          <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-amber-500" />
-              <span>Pilihan Musim & Tahun Turnamen</span>
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Pilih musim yang aktif atau lihat rekam jejak turnamen tahun-tahun sebelumnya secara historis.
-            </p>
+        <div className="space-y-6 max-w-4xl">
+          <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-amber-500" />
+                  <span>Kelola Pilihan Musim & Tahun Turnamen</span>
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Tambah musim baru setiap tahun acara, edit periode pelaksanaan, atau beralih ke musim turnamen lainnya.
+                </p>
+              </div>
+
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={handleOpenAddSeason}
+                  className="px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 shadow-sm flex items-center gap-1.5 whitespace-nowrap self-start sm:self-auto"
+                >
+                  <Plus className="w-3.5 h-3.5 text-slate-950" />
+                  <span>+ Buat Musim & Tahun Baru</span>
+                </button>
+              )}
+            </div>
           </div>
 
+          {/* Season Cards Grid */}
           <div className="space-y-3">
             {seasons.map(s => {
               const isActive = s.id === currentSeason.id;
               return (
                 <div
                   key={s.id}
-                  className={`p-4 rounded-xl border transition-all flex items-center justify-between ${
+                  className={`p-5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
                     isActive
-                      ? 'border-amber-500 bg-amber-50/20 dark:bg-amber-950/20'
+                      ? 'border-amber-500/80 bg-gradient-to-r from-amber-50/30 via-transparent to-amber-50/10 dark:from-amber-950/30 dark:to-transparent shadow-sm'
                       : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'
                   }`}
                 >
-                  <div>
-                    <div className="flex items-center gap-2">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
                       <h4 className="font-bold text-sm text-slate-900 dark:text-white">
                         {s.name}
                       </h4>
+                      <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
+                        Tahun {s.year}
+                      </span>
                       {isActive && (
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold uppercase">
+                        <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold uppercase flex items-center gap-1 border border-emerald-300/40">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-500" />
                           Musim Aktif Sekarang
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1">
-                      Tahun: {s.year} · Periode: {s.startDate} s/d {s.endDate}
+                    <div className="text-xs text-slate-500 dark:text-slate-400 font-mono flex items-center gap-3">
+                      <span>Mulai: {s.startDate}</span>
+                      <span>·</span>
+                      <span>Selesai: {s.endDate}</span>
                     </div>
                   </div>
 
-                  {!isActive && (
-                    <button
-                      onClick={() => setSeason(s.id)}
-                      className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                    >
-                      Beralih ke Musim Ini
-                    </button>
-                  )}
+                  <div className="flex items-center gap-2 self-end sm:self-auto">
+                    {canEdit && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditSeason(s)}
+                          className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 rounded-xl transition-colors"
+                          title="Edit Musim"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSeasonToDelete(s)}
+                          disabled={seasons.length <= 1}
+                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-xl transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                          title="Hapus Musim"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+
+                    {!isActive ? (
+                      <button
+                        type="button"
+                        onClick={() => setSeason(s.id)}
+                        className="px-3.5 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                      >
+                        Beralih ke Musim Ini
+                      </button>
+                    ) : (
+                      <span className="text-xs font-bold text-amber-600 dark:text-amber-400 font-mono px-3 py-1">
+                        ✓ Aktif
+                      </span>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -459,6 +691,7 @@ export const SettingsAndRBACManager: React.FC = () => {
               </h4>
               {canEdit && (
                 <button
+                  type="button"
                   onClick={handleOpenAddUser}
                   className="px-3 py-1.5 text-xs font-bold rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 transition-colors flex items-center gap-1 shadow-sm"
                 >
@@ -522,6 +755,7 @@ export const SettingsAndRBACManager: React.FC = () => {
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1 font-sans">
                           <button
+                            type="button"
                             onClick={() => handleOpenEditUser(u)}
                             className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 rounded-lg transition-colors"
                             title="Edit Akun"
@@ -529,6 +763,7 @@ export const SettingsAndRBACManager: React.FC = () => {
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
+                            type="button"
                             onClick={() => setDeletingUser(u)}
                             disabled={users.length <= 1}
                             className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-lg transition-colors disabled:opacity-30 disabled:pointer-events-none"
@@ -595,6 +830,245 @@ export const SettingsAndRBACManager: React.FC = () => {
         </div>
       )}
 
+      {/* Modal: Tambah Musim & Tahun Baru */}
+      {isAddSeasonOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-fadeIn">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-amber-500" />
+                <span>Buat Musim & Tahun Acara Baru</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsAddSeasonOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateSeason} className="p-6 space-y-4 text-xs">
+              <div>
+                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                  Nama Musim / Edisi Acara *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Turnamen HUT RI Ke-82 (2027)"
+                  value={newSeasonName}
+                  onChange={e => setNewSeasonName(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                  Tahun Acara *
+                </label>
+                <input
+                  type="number"
+                  required
+                  min={2020}
+                  max={2035}
+                  value={newSeasonYear}
+                  onChange={e => setNewSeasonYear(Number(e.target.value))}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                    Tanggal Mulai
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={newSeasonStart}
+                    onChange={e => setNewSeasonStart(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                    Tanggal Selesai
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={newSeasonEnd}
+                    onChange={e => setNewSeasonEnd(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newSeasonSetCurrent}
+                    onChange={e => setNewSeasonSetCurrent(e.target.checked)}
+                    className="rounded text-amber-500 focus:ring-amber-400"
+                  />
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    Aktifkan langsung sebagai musim berjalan sekarang
+                  </span>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsAddSeasonOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm"
+                >
+                  Simpan Musim Baru
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit Musim */}
+      {editingSeason && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-fadeIn">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <Edit2 className="w-4 h-4 text-amber-500" />
+                <span>Edit Musim & Periode Turnamen</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingSeason(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditSeason} className="p-6 space-y-4 text-xs">
+              <div>
+                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                  Nama Musim / Edisi Acara
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editingSeason.name}
+                  onChange={e => setEditingSeason({ ...editingSeason, name: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                  Tahun Acara
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={editingSeason.year}
+                  onChange={e => setEditingSeason({ ...editingSeason, year: Number(e.target.value) })}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                    Tanggal Mulai
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={editingSeason.startDate}
+                    onChange={e => setEditingSeason({ ...editingSeason, startDate: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                    Tanggal Selesai
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={editingSeason.endDate}
+                    onChange={e => setEditingSeason({ ...editingSeason, endDate: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingSeason(null)}
+                  className="px-4 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm"
+                >
+                  Simpan Perubahan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Konfirmasi Hapus Musim */}
+      {seasonToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+          <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 space-y-4 shadow-xl text-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                  Hapus Musim Ini?
+                </h4>
+                <p className="text-slate-500 dark:text-slate-400 mt-0.5">
+                  Apakah Anda yakin ingin menghapus <strong>{seasonToDelete.name}</strong> ({seasonToDelete.year})?
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setSeasonToDelete(null)}
+                className="px-3.5 py-1.5 font-semibold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteSeason}
+                className="px-4 py-1.5 font-bold rounded-lg bg-rose-600 hover:bg-rose-500 text-white shadow-sm"
+              >
+                Hapus Sekarang
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Add / Edit User */}
       {(isAddUserOpen || editingUser) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
@@ -605,6 +1079,7 @@ export const SettingsAndRBACManager: React.FC = () => {
                 <span>{editingUser ? 'Edit Akun Pengguna' : 'Tambah Akun Pengurus / Wasit Baru'}</span>
               </h3>
               <button
+                type="button"
                 onClick={() => {
                   setIsAddUserOpen(false);
                   setEditingUser(null);

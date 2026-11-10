@@ -11,8 +11,11 @@ import {
   X,
   FileSpreadsheet,
   Globe,
-  Bell
+  Bell,
+  Phone,
+  Mail
 } from 'lucide-react';
+import { PWAInstallButton } from './common/PWAInstallBanner';
 
 interface NavbarProps {
   currentTab: string;
@@ -145,6 +148,23 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Zone 3: Primary Action & Controls */}
           <div className="flex items-center gap-2.5 shrink-0">
             
+            {/* PWA Install Button for all devices */}
+            <PWAInstallButton />
+
+            {/* Quick Contact Hotline */}
+            {identity.contactWa && (
+              <a
+                href={`https://wa.me/${identity.contactWa.replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noreferrer"
+                className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-mono text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg border border-emerald-200 dark:border-emerald-800/60 transition-colors"
+                title="Hubungi Kontak Panitia WhatsApp"
+              >
+                <Phone className="w-3.5 h-3.5" />
+                <span>{identity.contactWa}</span>
+              </a>
+            )}
+
             {/* View Switcher (Public Portal vs Admin Console) */}
             <button
               onClick={() => setCurrentTab(isAdminTab ? 'public-live' : 'admin-dashboard')}
@@ -268,6 +288,33 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 {isAdminTab ? 'Beralih ke Portal Warga' : 'Beralih ke Panel Panitia'}
               </button>
+            </div>
+
+            {/* Official Contact Info in Mobile Menu */}
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 px-3 space-y-1.5 text-xs">
+              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block font-bold">
+                Kontak & Email Resmi Panitia:
+              </span>
+              {identity.contactWa && (
+                <a
+                  href={`https://wa.me/${identity.contactWa.replace(/\D/g, '')}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-mono text-[11px]"
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                  <span>{identity.contactWa}</span>
+                </a>
+              )}
+              {identity.contactEmail && (
+                <a
+                  href={`mailto:${identity.contactEmail}`}
+                  className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 hover:text-indigo-500 text-[11px]"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  <span>{identity.contactEmail}</span>
+                </a>
+              )}
             </div>
           </div>
         )}

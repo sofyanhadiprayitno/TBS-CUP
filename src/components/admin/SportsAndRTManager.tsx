@@ -45,6 +45,7 @@ export const SportsAndRTManager: React.FC = () => {
   const [spCategory, setSpCategory] = useState<SportCategory>('esports');
   const [spColor, setSpColor] = useState('#8b5cf6');
   const [spIcon, setSpIcon] = useState('Gamepad2');
+  const [spIconUrl, setSpIconUrl] = useState('');
   const [spImage, setSpImage] = useState('');
   const [spFormat, setSpFormat] = useState<MatchFormat>('BO3');
   const [spRound1, setSpRound1] = useState('Babak Pertama (Game 1)');
@@ -71,7 +72,19 @@ export const SportsAndRTManager: React.FC = () => {
 
   const canManage = activeRole === 'super_admin' || activeRole === 'ketua_panitia';
 
-  const renderSportIcon = (name: string, color: string) => {
+  const renderSportIcon = (name: string, color: string, iconUrl?: string) => {
+    if (iconUrl) {
+      return (
+        <img
+          src={iconUrl}
+          alt={name}
+          className="w-5 h-5 rounded-md object-cover border border-white/20 shadow-xs shrink-0"
+          onError={e => {
+            (e.currentTarget as HTMLElement).style.display = 'none';
+          }}
+        />
+      );
+    }
     switch (name) {
       case 'Gamepad2': return <Gamepad2 className="w-5 h-5" style={{ color }} />;
       case 'Flame': return <Flame className="w-5 h-5" style={{ color }} />;
@@ -95,6 +108,7 @@ export const SportsAndRTManager: React.FC = () => {
       iconName: spIcon,
       color: spColor,
       imageUrl: spImage || '/src/assets/images/cabor_esports_gaming_1794294148716.jpg',
+      iconUrl: spIconUrl || undefined,
       format: spFormat,
       roundLabels: {
         round1: spRound1,
@@ -117,6 +131,7 @@ export const SportsAndRTManager: React.FC = () => {
     setSpName('');
     setSpRulesSummary('');
     setSpImage('');
+    setSpIconUrl('');
     setShowAddSport(false);
   };
 
@@ -274,7 +289,7 @@ export const SportsAndRTManager: React.FC = () => {
 
                 <div className="absolute bottom-2.5 left-3 flex items-center gap-2">
                   <div className="p-1.5 rounded-lg bg-black/60 backdrop-blur-xs text-white">
-                    {renderSportIcon(s.iconName, s.color)}
+                    {renderSportIcon(s.iconName, s.color, s.iconUrl)}
                   </div>
                   <h3 className="font-bold text-white text-sm drop-shadow-sm">
                     {s.name}
@@ -418,17 +433,29 @@ export const SportsAndRTManager: React.FC = () => {
             </div>
 
             <form onSubmit={handleCreateSport} className="space-y-4 text-xs">
-              <ImageUploadField
-                label="Banner Gambar Cabor"
-                value={spImage}
-                onChange={url => setSpImage(url)}
-                aspectRatio="video"
-                presetOptions={[
-                  { label: 'Esports Gaming', url: '/src/assets/images/cabor_esports_gaming_1794294148716.jpg' },
-                  { label: 'Badminton Court', url: '/src/assets/images/cabor_badminton_sports_1794294148699.jpg' },
-                  { label: 'Arena Stage', url: '/src/assets/images/hero_esports_championship_1794294147972.jpg' }
-                ]}
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <ImageUploadField
+                  label="Banner Gambar Cabor (16:9)"
+                  value={spImage}
+                  onChange={url => setSpImage(url)}
+                  aspectRatio="video"
+                  presetOptions={[
+                    { label: 'Esports Gaming', url: '/src/assets/images/cabor_esports_gaming_1794294148716.jpg' },
+                    { label: 'Badminton Court', url: '/src/assets/images/cabor_badminton_sports_1794294148699.jpg' },
+                    { label: 'Arena Stage', url: '/src/assets/images/hero_esports_championship_1794294147972.jpg' }
+                  ]}
+                />
+
+                <ImageUploadField
+                  label="Upload Icon / Logo Cabor (1:1)"
+                  value={spIconUrl}
+                  onChange={url => setSpIconUrl(url)}
+                  aspectRatio="square"
+                  presetOptions={[
+                    { label: 'Trofi Emas', url: '/src/assets/images/trophy_gold_cup_1794294149443.jpg' }
+                  ]}
+                />
+              </div>
 
               <div>
                 <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
@@ -583,12 +610,24 @@ export const SportsAndRTManager: React.FC = () => {
             </div>
 
             <form onSubmit={handleUpdateSport} className="space-y-4 text-xs">
-              <ImageUploadField
-                label="Banner Gambar Cabor"
-                value={editingSport.imageUrl || ''}
-                onChange={url => setEditingSport({ ...editingSport, imageUrl: url })}
-                aspectRatio="video"
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <ImageUploadField
+                  label="Banner Gambar Cabor (16:9)"
+                  value={editingSport.imageUrl || ''}
+                  onChange={url => setEditingSport({ ...editingSport, imageUrl: url })}
+                  aspectRatio="video"
+                />
+
+                <ImageUploadField
+                  label="Upload Icon / Logo Cabor (1:1)"
+                  value={editingSport.iconUrl || ''}
+                  onChange={url => setEditingSport({ ...editingSport, iconUrl: url })}
+                  aspectRatio="square"
+                  presetOptions={[
+                    { label: 'Trofi Emas', url: '/src/assets/images/trophy_gold_cup_1794294149443.jpg' }
+                  ]}
+                />
+              </div>
 
               <div>
                 <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">

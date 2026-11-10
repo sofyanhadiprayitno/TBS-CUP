@@ -44,7 +44,9 @@ import {
   Lock,
   Settings,
   ShieldAlert,
-  Palette
+  Palette,
+  Phone,
+  Mail
 } from 'lucide-react';
 
 const MainLayout: React.FC = () => {
@@ -234,16 +236,36 @@ const MainLayout: React.FC = () => {
             <span>{identity.organizer}</span>
           </div>
 
-          <div className="flex items-center gap-4 text-xs font-mono">
-            <span>Enkripsi AES-256 Aktif</span>
-            <span>·</span>
-            <span>Google Apps Script Cloud Connected</span>
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs font-mono">
+            {identity.contactWa && (
+              <a
+                href={`https://wa.me/${identity.contactWa.replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 hover:underline"
+                title="Nomor Kontak WhatsApp Panitia"
+              >
+                <Phone className="w-3.5 h-3.5" />
+                <span>Kontak: {identity.contactWa}</span>
+              </a>
+            )}
+            <span className="hidden sm:inline">·</span>
+            {identity.contactEmail && (
+              <a
+                href={`mailto:${identity.contactEmail}`}
+                className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 hover:text-indigo-500 hover:underline font-sans"
+                title="Email Resmi Panitia"
+              >
+                <Mail className="w-3.5 h-3.5 text-slate-400" />
+                <span>Email: {identity.contactEmail}</span>
+              </a>
+            )}
             <span>·</span>
             <button
               onClick={() => setShowAuthModal(true)}
               className="text-indigo-600 dark:text-indigo-400 hover:underline"
             >
-              {currentUser ? `Masuk sebagai: ${currentUser.fullName}` : 'Login Pengurus'}
+              {currentUser ? `Pengurus: ${currentUser.fullName}` : 'Login Pengurus'}
             </button>
           </div>
         </div>

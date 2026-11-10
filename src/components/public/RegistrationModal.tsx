@@ -16,7 +16,7 @@ interface RegistrationModalProps {
 }
 
 export const RegistrationModal: React.FC<RegistrationModalProps> = ({ onClose }) => {
-  const { contingents, sports, registerAthlete } = useTournament();
+  const { identity, contingents, sports, registerAthlete } = useTournament();
 
   const [fullName, setFullName] = useState('');
   const [rtId, setRtId] = useState(contingents[0]?.id || 'rt-01');
@@ -219,6 +219,22 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ onClose })
                   onChange={e => setNik(e.target.value)}
                   className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
                 />
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600 dark:text-slate-400">
+              <span className="font-semibold text-slate-800 dark:text-slate-200">Butuh bantuan pendaftaran?</span>
+              <div className="flex items-center gap-3">
+                {identity.contactWa && (
+                  <a href={`https://wa.me/${identity.contactWa.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="text-emerald-600 dark:text-emerald-400 font-mono hover:underline">
+                    WA: {identity.contactWa}
+                  </a>
+                )}
+                {identity.contactEmail && (
+                  <a href={`mailto:${identity.contactEmail}`} className="hover:underline">
+                    {identity.contactEmail}
+                  </a>
+                )}
               </div>
             </div>
 

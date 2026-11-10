@@ -48,6 +48,9 @@ interface TournamentContextType {
   seasons: Season[];
   currentSeason: Season;
   setSeason: (seasonId: string) => void;
+  addSeason: (season: Omit<Season, 'id'>) => void;
+  updateSeason: (season: Season) => void;
+  deleteSeason: (id: string) => void;
   sports: SportBranch[];
   updateSport: (sport: SportBranch) => void;
   addSport: (sport: SportBranch) => void;
@@ -603,8 +606,54 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const setSeason = (seasonId: string) => {
     setCurrentSeasonId(seasonId);
+    const target = seasons.find(s => s.id === seasonId);
     setSeasons(prev => prev.map(s => ({ ...s, isActive: s.id === seasonId })));
-    addAuditLog('SWITCH_SEASON', 'Musim Acara', `Beralih ke musim acara ${seasonId}`);
+    if (target) {
+      setIdentity(prev => ({
+        ...prev,
+        season: target.name,
+        year: target.year,
+        lastUpdated: new Date().toISOString()
+      }));
+    }
+    addAuditLog('SWITCH_SEASON', 'Musim Acara', `Beralih ke musim acara ${target?.name || seasonId}`);
+  };
+
+  const addSeason = (season: Omit<Season, 'id'>) => {
+    const newSeason: Season = {
+      ...season,
+      id: `s-${Date.now()}`
+    };
+    setSeasons(prev => [...prev, newSeason]);
+    if (season.isActive) {
+      setSeason(newSeason.id);
+    }
+    addAuditLog('ADD_SEASON', 'Musim Acara', `Musim & tahun baru dibuat: ${season.name} (${season.year})`);
+  };
+
+  const updateSeason = (season: Season) => {
+    setSeasons(prev => prev.map(s => s.id === season.id ? season : s));
+    if (season.id === currentSeasonId) {
+      setIdentity(prev => ({
+        ...prev,
+        season: season.name,
+        year: season.year,
+        lastUpdated: new Date().toISOString()
+      }));
+    }
+    addAuditLog('UPDATE_SEASON', 'Musim Acara', `Data musim ${season.name} diperbarui.`);
+  };
+
+  const deleteSeason = (id: string) => {
+    if (seasons.length <= 1) return;
+    setSeasons(prev => prev.filter(s => s.id !== id));
+    if (currentSeasonId === id) {
+      const remaining = seasons.filter(s => s.id !== id);
+      if (remaining[0]) {
+        setSeason(remaining[0].id);
+      }
+    }
+    addAuditLog('DELETE_SEASON', 'Musim Acara', `Musim acara ${id} dihapus.`);
   };
 
   const currentSeason = seasons.find(s => s.id === currentSeasonId) || seasons[0];
@@ -729,6 +778,9 @@ export const TournamentProvider: React.FC<{ children: ReactNode }> = ({ children
         seasons,
         currentSeason,
         setSeason,
+        addSeason,
+        updateSeason,
+        deleteSeason,
         sports,
         updateSport,
         addSport,

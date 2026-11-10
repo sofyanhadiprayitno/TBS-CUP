@@ -18,8 +18,11 @@ import {
   Sparkles,
   ChevronRight,
   Target,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Phone,
+  Mail
 } from 'lucide-react';
+import { PWAInstallButton } from '../common/PWAInstallBanner';
 
 interface PublicTournamentViewProps {
   onOpenRegisterModal: () => void;
@@ -105,7 +108,7 @@ export const PublicTournamentView: React.FC<PublicTournamentViewProps> = ({
               {identity.slogan}. Saksikan perebutan supremasi e-sports dan olahraga antar-RT secara langsung dengan update skor babak 1 dan 2 instan, bagan otomatis, dan registrasi atlet online.
             </p>
 
-            {/* Action Buttons */}
+            {/* Action Buttons & Contact Hotline */}
             <div className="pt-2 flex flex-wrap items-center gap-3">
               <button
                 onClick={onOpenRegisterModal}
@@ -121,6 +124,34 @@ export const PublicTournamentView: React.FC<PublicTournamentViewProps> = ({
                 <Radio className="w-4 h-4 text-rose-500 animate-pulse" />
                 <span>Pantau Skor Live ({liveMatches.length})</span>
               </a>
+              <PWAInstallButton className="py-3 px-4 text-xs sm:text-sm rounded-xl" />
+            </div>
+
+            {/* Official Contact & Email Hotline Bar */}
+            <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+              <span className="text-slate-400 font-mono text-[11px] block sm:inline">Kontak Panitia:</span>
+              {identity.contactWa && (
+                <a
+                  href={`https://wa.me/${identity.contactWa.replace(/\D/g, '')}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono text-[11px] flex items-center gap-1.5 hover:bg-emerald-500/30 transition-colors"
+                  title="WhatsApp Panitia"
+                >
+                  <Phone className="w-3 h-3 text-emerald-400" />
+                  <span>{identity.contactWa}</span>
+                </a>
+              )}
+              {identity.contactEmail && (
+                <a
+                  href={`mailto:${identity.contactEmail}`}
+                  className="px-2.5 py-1 rounded-lg bg-white/10 border border-white/20 text-slate-300 text-[11px] flex items-center gap-1.5 hover:bg-white/15 transition-colors"
+                  title="Email Resmi Panitia"
+                >
+                  <Mail className="w-3 h-3 text-slate-400" />
+                  <span>{identity.contactEmail}</span>
+                </a>
+              )}
             </div>
 
             {/* Quick Metrics Bar */}

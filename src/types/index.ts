@@ -30,6 +30,7 @@ export interface SportBranch {
   iconName: string;
   color: string;
   imageUrl?: string;
+  iconUrl?: string;
   format: MatchFormat;
   roundLabels: {
     round1: string;
