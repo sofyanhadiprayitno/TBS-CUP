@@ -1,0 +1,6 @@
+{
+  "name": "RT E-Sports & Sport Championship Manager",
+  "description": "Sistem manajemen turnamen antar-RT berbasis Google Apps Script & Google Sheets dengan skor babak 1 & 2 real-time, bagan otomatis, klasemen, dan tata kelola anggaran.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
